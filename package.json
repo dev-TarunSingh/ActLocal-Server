@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "nodemon index.js",
-    "build": "npm install" 
+    "build": "npm install"
   },
   "keywords": [
     "actlocal",
@@ -21,6 +21,9 @@
   "author": "dev-tarunsingh",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "bcrypt-nodejs": "^0.0.3",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -28,6 +31,6 @@
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.1",
     "nodemon": "^3.1.9",
-    "simplecrypt": "^0.1.0"
+    "nvm": "^0.0.4"
   }
 }
