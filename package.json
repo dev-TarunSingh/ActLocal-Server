@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "nodemon index.js",
-    "build": "rm -rf node_modules package-lock.json & npm install" // Add this script to ensure dependencies are installed
+    "build": "npm install" 
   },
   "keywords": [
     "actlocal",
