@@ -1,8 +1,10 @@
 import User from '../models/User.js';
 import dotenv from 'dotenv';
 dotenv.config();
-import bcrypt from 'bcrypt';
+import simplecrypt from 'simplecrypt';
 import jwt from 'jsonwebtoken';
+
+const sc = simplecrypt();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -14,7 +16,7 @@ export const signup = async (req, res) => {
     if (searchUser) {
       res.status(400).json({ message: 'User already exists' });
     } else {
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await sc.encrypt(password);
       const newUser = await User.create({ email, password: hashedPassword, firstName });
       res.status(201).json({ message: 'User created successfully! Please Log In!' });
     }
