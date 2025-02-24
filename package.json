@@ -5,8 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "test": "nodemon index.js"
+    "start": "npm install & node index.js",
+    "test": "nodemon index.js",
+    "build": "npm install & npm start"
   },
   "keywords": [
     "actlocal",
