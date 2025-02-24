@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "npm install & node index.js",
+    "start": "node index.js",
     "test": "nodemon index.js",
-    "build": "npm install & npm start"
+    "build": "rm -rf node_modules package-lock.json & npm install" // Add this script to ensure dependencies are installed
   },
   "keywords": [
     "actlocal",
