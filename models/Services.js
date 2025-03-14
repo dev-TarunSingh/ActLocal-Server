@@ -5,7 +5,7 @@ const serviceSchema = new mongoose.Schema(
     name: { type: String, required: true },
     description: { type: String, required: true },
     category: { type: String, required: true },
-    servicePrice: { type: Number, required: true },
+    servicePrice: { type: Number, required: true }, // Ensure this matches the field name in your data
     location: {
       type: {
         type: String,

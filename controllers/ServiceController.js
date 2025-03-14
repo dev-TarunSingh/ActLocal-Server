@@ -1,21 +1,19 @@
 import Services from '../models/Services.js';
 
-
 export const AddService = async (req, res) => {
-    const { name, description, category, servicePrice, location } = req.body;
-    try {
-        const newService = await Services.insertOne({ name, description, category, servicePrice, location });
-        res.status(201).json({ message: 'Service added successfully!' });
-    }
-    catch (error) {
-        res.status(401).json({ message: 'Error adding service: ' + error.message });
-    }
-
+  const { name, description, category, servicePrice, location, postedBy } = req.body;
+  try {
+    const newService = new Services({ name, description, category, servicePrice, location, postedBy });
+    await newService.save();
+    res.status(201).json({ message: 'Service added successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding service: ' + error.message });
+  }
 };
-
 
 export const NearbyServices = async (req, res) => {
     const { longitude, latitude } = req.body;
+    console.log("got location");
     try {
         const services = await Services.find({
             location: {
@@ -28,6 +26,7 @@ export const NearbyServices = async (req, res) => {
                 }
             }
         });
+        console.log("got services");
         res.status(200).json({ services });
     }
     catch (error) {

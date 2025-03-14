@@ -33,11 +33,11 @@ app.post('/login', login);
 
 app.post('/services', AddService);
 
-app.get('/services/nearby', NearbyServices);
+app.post('/services/nearby', NearbyServices);
 
 app.delete('/services', RemoveServices);
 
-app.get('/services', MyServices);
+app.get('/services/my-services', MyServices);
 
 
 app.listen(PORT, () => {
