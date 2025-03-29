@@ -33,6 +33,7 @@
     "nodemon": "^3.1.9",
     "nvm": "^0.0.4",
     "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "socketio": "^1.0.0"
   }
 }

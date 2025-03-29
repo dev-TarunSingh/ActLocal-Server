@@ -1,59 +1,31 @@
-import mongoose from "mongoose";
-import Chat from "../models/Chat.js";
-
-export const sendMessage = async (req, res) => {
-  const { sender, receiver, message } = req.body;
-  try {
-    const chatMessage = new Chat({ sender, receiver, message });
-    await chatMessage.save();
-    res.status(201).json(chatMessage);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
 export const getMessages = async (req, res) => {
-  const { sender, receiver } = req.query;
   try {
-    const messages = await Chat.find({
-      $or: [
-        { sender, receiver },
-        { sender: receiver, receiver: sender },
-      ],
-    }).sort({ timestamp: 1 });
-    res.status(200).json(messages);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { userId } = req.params;
+
+    // Get all chat rooms where the user is involved
+    const chatRooms = await Chat.aggregate([
+      {
+        $match: {
+          $or: [{ sender: userId }, { receiver: userId }],
+        },
+      },
+      {
+        $sort: { timestamp: -1 }, // Sort messages by latest
+      },
+      {
+        $group: {
+          _id: "$chatRoom",
+          lastMessage: { $first: "$message" },
+          lastTimestamp: { $first: "$timestamp" },
+          sender: { $first: "$sender" },
+          receiver: { $first: "$receiver" },
+        },
+      },
+      { $sort: { lastTimestamp: -1 } }, // Sort chats by most recent message
+    ]);
+
+    res.json(chatRooms);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
-
-
-export const getChatList = async (req, res) => {
-    try {
-      const userId = req.params.userId;
-  
-      const chatList = await Chat.aggregate([
-        {
-          $match: {
-            $or: [{ sender: new mongoose.Types.ObjectId(userId) }, { receiver: new mongoose.Types.ObjectId(userId) }]
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            contacts: { $addToSet: { $cond: [{ $eq: ["$sender", new mongoose.Types.ObjectId(userId)] }, "$receiver", "$sender"] } }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            contacts: 1
-          }
-        }
-      ]);
-  
-      res.json(chatList.length > 0 ? chatList[0].contacts : []);
-    } catch (error) {
-      res.status(500).json({ message: "Server Error", error });
-    }
-  };

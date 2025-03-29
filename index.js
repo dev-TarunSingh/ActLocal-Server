@@ -1,22 +1,23 @@
 import dotenv from 'dotenv';
-dotenv.config(); 
+dotenv.config();
 import express from 'express';
 import mongoose from 'mongoose';
 import { Server } from "socket.io";
 import cors from 'cors';
 import http from 'http';
 import { signup, login } from './controllers/userController.js';
-import { AddService, RemoveServices, MyServices, NearbyServices } from './controllers/ServiceController.js';
-import { sendMessage, getMessages, getChatList } from './controllers/ChatController.js';
+import  Chat  from './models/Chat.js';
+import { AddService, NearbyServices, RemoveServices, MyServices } from './controllers/ServiceController.js';
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Change for production
+    origin: "*", 
+    methods: ["GET", "POST"]
   },
 });
-app.use(cors()); // Ensure CORS is enabled
+app.use(cors()); 
 app.use(express.json());
 const PORT = process.env.PORT;
 
@@ -35,47 +36,67 @@ mongoose.connect(mongoURI, {
 });
 
 app.post('/signup', signup);
-
 app.post('/login', login);
-
 app.post('/services', AddService);
-
 app.post('/services/nearby', NearbyServices);
-
 app.delete('/services', RemoveServices);
-
 app.get('/services/my-services', MyServices);
+app.get('/chats', async (req, res) => {
+  const chats = await Chat.find();
+  res.json(chats);
+});
+app.get("/chat/:chatroomid", async (req, res) => {
+  try {
+    const { chatroomid } = req.params;
+    const chat = await Chat.findById({chatroomid});
+    if (!chat) {
+      return res.status(404).json({ message: "No chat found" });
+    } 
+    res.json(chat.messages);
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
-app.post('/chat/send', sendMessage);
-app.get('/chat/messages', getMessages);
-app.get('/chat/list', getChatList);
+app.get("/messages", async (req, res) => {
+  try {
+    const messages = await Chat.find({}, "messages"); // Fetch all messages
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+  console.log("New client connected");
 
-  socket.on("joinChat", (chatId) => {
-    socket.join(chatId);
-    console.log(`User joined chat: ${chatId}`);
+  // Join a chatroom
+  socket.on("joinRoom", ({ chatroomId }) => {
+      socket.join(chatroomId);
+      console.log(`User joined chatroom: ${chatroomId}`);
   });
 
-  socket.on("sendMessage", async (messageData) => {
-    try {
-      const { sender, receiver, message } = messageData;
-      console.log("Message data:", messageData);
-      
-      const chatMessage = new Chat({ sender, receiver, message });
-      await chatMessage.save();
+  // Handle incoming messages
+  socket.on("sendMessage", async ({ chatroomId, sender, receiver, text }) => {
+      const newMessage = { text, timestamp: new Date() };
 
-      io.to(receiver).to(sender).emit("receiveMessage", chatMessage);
-      
-      console.log("Message sent:", chatMessage);
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
+      // Update chat in the database
+      let chat = await Chat.findOne({ chatroomId });
+
+      if (!chat) {
+          chat = new Chat({ sender, receiver, chatroomId, messages: [newMessage], lastMessage: text });
+      } else {
+          chat.messages.push(newMessage);
+          chat.lastMessage = text;
+      }
+      await chat.save();
+
+      // Emit message to the chatroom
+      io.to(chatroomId).emit("newMessage", newMessage);
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+      console.log("Client disconnected");
   });
 });
 
