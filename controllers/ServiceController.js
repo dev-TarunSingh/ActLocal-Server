@@ -14,7 +14,6 @@ export const AddService = async (req, res) => {
 
 export const NearbyServices = async (req, res) => {
     const { longitude, latitude } = req.body;
-    console.log("got location");
     try {
         const services = await Services.find({
             location: {
@@ -26,8 +25,7 @@ export const NearbyServices = async (req, res) => {
                     $maxDistance: 20000
                 }
             }
-        });
-        console.log(services[0]);
+        }).populate("postedBy", "firstName _id");
         res.status(200).json({ services });
     }
     catch (error) {

@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export const signup = async (req, res) => {
-  const { email, password, firstName } = req.body;
+  const { email, password, firstName, userName } = req.body;
   console.log(email, password, firstName);
   try {
     const searchUser = await User.findOne({ email });
@@ -20,6 +20,7 @@ export const signup = async (req, res) => {
         email,
         password: hashedPassword,
         firstName,
+        userName,
       });
       res
         .status(201)
@@ -31,10 +32,10 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-  console.log(email, password);
+  console.log("in login function")
+  const { userName, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ userName });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
