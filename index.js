@@ -83,7 +83,11 @@ io.on("connection", (socket) => {
 
   // When a user sends a message
   socket.on("sendMessage", async ({ chatroomId, sender, text }) => {
+    console.log("Chatroomid: ", chatroomId);
+    console.log("Sender", sender);
+    console.log("text", text);
     const message = new Message({ chatroomId, sender, text });
+
     await message.save();
 
     // Update last message in chatroom
@@ -93,9 +97,9 @@ io.on("connection", (socket) => {
     const chatroom = await ChatRooms.findById(chatroomId).populate("participants");
     const recipient = chatroom.participants.find((user) => user._id.toString() !== sender);
 
-    if (recipient && onlineUsers.has(recipient._id.toString())) {
-      io.to(onlineUsers.get(recipient._id.toString())).emit("newMessage", message);
-    }
+    
+    io.emit("newMessage", message);
+    
   });
 
   // Handle disconnect
