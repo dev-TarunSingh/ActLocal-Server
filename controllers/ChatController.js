@@ -1,31 +1,27 @@
-export const getMessages = async (req, res) => {
-  try {
-    const { userId } = req.params;
+import ChatRoom from "../models/ChatRoom.js"; 
+import Message from "../models/Message.js";
 
-    // Get all chat rooms where the user is involved
-    const chatRooms = await Chat.aggregate([
-      {
-        $match: {
-          $or: [{ sender: userId }, { receiver: userId }],
-        },
-      },
-      {
-        $sort: { timestamp: -1 }, // Sort messages by latest
-      },
-      {
-        $group: {
-          _id: "$chatRoom",
-          lastMessage: { $first: "$message" },
-          lastTimestamp: { $first: "$timestamp" },
-          sender: { $first: "$sender" },
-          receiver: { $first: "$receiver" },
-        },
-      },
-      { $sort: { lastTimestamp: -1 } }, // Sort chats by most recent message
-    ]);
-
-    res.json(chatRooms);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+const getUserChatRooms = async (userId) => {
+  return await ChatRoom.find({ participants: userId })
+    .populate("participants", "name") // Load participant details
+    .populate("lastMessage"); // Show last message
 };
+
+const startChat = async (user1, user2) => {
+  let chatroom = await ChatRoom.findOne({
+    participants: { $all: [user1, user2] },
+  });
+
+  if (!chatroom) {
+    chatroom = new ChatRoom({ participants: [user1, user2] });
+    await chatroom.save();
+  }
+
+  return chatroom;
+};
+
+const getChatMessages = async (chatroomId) => {
+  return await Message.find({ chatroomId }).populate("sender", "name");
+};
+
+export { getUserChatRooms, startChat, getChatMessages };

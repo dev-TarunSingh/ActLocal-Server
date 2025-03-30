@@ -8,6 +8,9 @@ import http from 'http';
 import { signup, login } from './controllers/userController.js';
 import { AddService, NearbyServices, RemoveServices, MyServices } from './controllers/ServiceController.js';
 import userRoutes from './routes/userRoutes.js'; // Import the default export
+import chatRoutes from './routes/chatRoutes.js'; // Import the default export
+import ChatRooms from './models/Chat.js';
+import Message from './models/Message.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +20,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   },
 });
+
+const onlineUsers = new Map();
 
 app.use(cors()); 
 app.use(express.json());
@@ -37,49 +42,70 @@ mongoose.connect(mongoURI, {
 });
 
 
+
+app.use('/api/user', userRoutes);
+app.use('/api/chat', chatRoutes);
 app.post('/signup', signup);
 app.post('/login', login);
 app.post('/services', AddService);
 app.post('/services/nearby', NearbyServices);
 app.delete('/services', RemoveServices);
 app.get('/services/my-services', MyServices);
-app.use('/api/user', userRoutes); // Use the imported router
 
+
+io.on("join", (userId) => {
+  onlineUsers.set(userId, socket.id);
+});
 
 io.on("connection", (socket) => {
-  console.log("New client connected");
+  console.log("A user connected:", socket.id);
 
-  // Join a chatroom
-  socket.on("joinRoom", ({ chatroomId }) => {
-      socket.join(chatroomId);
-      console.log(`User joined chatroom: ${chatroomId}`);
-  });
+  // When a user joins, store them in onlineUsers
+  socket.on("join", async (userId) => {
+    onlineUsers.set(userId, socket.id);
 
-  // Handle incoming messages
-  socket.on("sendMessage", async ({ chatroomId, sender, receiver, text }) => {
-    console.log(`Received message: ${text}`);
-    console.log(`Sender: ${sender}`);
-    console.log(`Receiver: ${receiver}`);
-    console.log(`Chatroom: ${chatroomId}`);
-      const newMessage = { text, timestamp: new Date() };
+    // Fetch all chatrooms the user is in
+    const chatrooms = await ChatRooms.find({ participants: userId });
 
-      // Update chat in the database
-      let chat = await Chat.findOne({ chatroomId });
+    for (const chatroom of chatrooms) {
+      // Fetch all unread messages (not seen by user)
+      const messages = await Message.find({
+        chatroomId: chatroom._id,
+        readBy: { $ne: userId }, // Messages not yet read by the user
+      }).populate("sender", "name");
 
-      if (!chat) {
-          chat = new Chat({ sender, receiver, chatroomId, messages: [newMessage], lastMessage: text });
-      } else {
-          chat.messages.push(newMessage);
-          chat.lastMessage = text;
+      // Send unread messages to the user
+      if (messages.length > 0) {
+        io.to(socket.id).emit("missedMessages", { chatroomId: chatroom._id, messages });
       }
-      await chat.save();
-
-      // Emit message to the chatroom
-      io.to(chatroomId).emit("newMessage", newMessage);
+    }
   });
 
+  // When a user sends a message
+  socket.on("sendMessage", async ({ chatroomId, sender, text }) => {
+    const message = new Message({ chatroomId, sender, text });
+    await message.save();
+
+    // Update last message in chatroom
+    await ChatRooms.findByIdAndUpdate(chatroomId, { lastMessage: message._id });
+
+    // Notify other participant
+    const chatroom = await ChatRooms.findById(chatroomId).populate("participants");
+    const recipient = chatroom.participants.find((user) => user._id.toString() !== sender);
+
+    if (recipient && onlineUsers.has(recipient._id.toString())) {
+      io.to(onlineUsers.get(recipient._id.toString())).emit("newMessage", message);
+    }
+  });
+
+  // Handle disconnect
   socket.on("disconnect", () => {
-      console.log("Client disconnected");
+    console.log("User disconnected:", socket.id);
+    onlineUsers.forEach((value, key) => {
+      if (value === socket.id) {
+        onlineUsers.delete(key);
+      }
+    });
   });
 });
 
