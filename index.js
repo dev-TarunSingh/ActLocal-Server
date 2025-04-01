@@ -83,9 +83,6 @@ io.on("connection", (socket) => {
 
   // When a user sends a message
   socket.on("sendMessage", async ({ chatroomId, sender, text }) => {
-    console.log("Chatroomid: ", chatroomId);
-    console.log("Sender", sender);
-    console.log("text", text);
     const message = new Message({ chatroomId, sender, text });
 
     await message.save();

@@ -8,29 +8,28 @@ const router = express.Router();
 // Get all chatrooms a user is part of
 router.get("/:userId", async (req, res) => {
   try {
-    const userId = new mongoose.Types.ObjectId(req.params.userId); // Convert to ObjectId
+    const userId = new mongoose.Types.ObjectId(req.params.userId);
 
     console.log(`Fetching chatrooms for user: ${userId}`);
 
     const foundchatrooms = await ChatRooms.find({ participants: userId })
-      .populate("participants", "firstName") // Populate user names
-      .sort({ updatedAt: -1 }); // Sort by last activity
+      .populate("participants", "firstName")
+      .sort({ updatedAt: -1 });
 
     const chatroomsWithLastMessage = await Promise.all(
       foundchatrooms.map(async (chatroom) => {
         const lastMessage = await Message.findOne({ chatroomId: chatroom._id })
           .sort({ createdAt: -1 })
-          .populate("sender", "name"); // Populate sender name
+          .populate("sender", "name");
 
-        // Filter out the requesting user's firstName from participants
         const otherParticipants = chatroom.participants.filter(
           (participant) => !participant._id.equals(userId)
         );
 
         return {
           ...chatroom.toObject(),
-          participants: otherParticipants, // Include only other participants
-          lastMessage: lastMessage || null, // Include last message or null if none
+          participants: otherParticipants,
+          lastMessage: lastMessage || "Start a conversation",
         };
       })
     );
@@ -55,6 +54,8 @@ router.get("/messages/:chatroomId", async (req, res) => {
       chatroomId: req.params.chatroomId,
     }).populate("sender", "firstName");
 
+    console.log("Messages sent by server:", messages); // Debugging log to check the array
+
     if (!messages || messages.length === 0) {
       console.error("No messages found for chatroom:", req.params.chatroomId);
     }
@@ -69,28 +70,28 @@ router.get("/messages/:chatroomId", async (req, res) => {
 router.post("/chatrooms", async (req, res) => {
   const { user1, user2 } = req.body;
 
+  const user1Id = new mongoose.Types.ObjectId(user1);
+  const user2Id = new mongoose.Types.ObjectId(user2);
+
   if (!user1 || !user2) {
     return res.status(400).json({ error: "Both user1 and user2 are required" });
   }
 
   try {
-    const user1 = new mongoose.Types.ObjectId(user1);
-    const user2 = new mongoose.Types.ObjectId(user2);
-
-    // Check for an existing chatroom with the same participants
-    let chatroom = await ChatRooms.findOne({
-      participants: { $all: [user1, user2] },
+    const chatroom = await ChatRooms.findOne({
+      participants: { $all: [user1Id, user2Id], $size: 2 }
     });
+    
 
     console.log("Chatroom found:", chatroom);
 
     if (!chatroom) {
-      chatroom = new ChatRooms({ participants: [user1, user2] });
+      const chatroom = new ChatRooms({ participants: [user1Id, user2Id] });
       await chatroom.save();
-      console.log("New chatroom created:", chatroom._id);
     } else {
       console.log("Existing chatroom found:", chatroom._id);
     }
+
     res.status(200).json({ chatroomId: chatroom._id });
   } catch (error) {
     console.error("Error creating or fetching chatroom:", error);
