@@ -35,7 +35,7 @@ export const NearbyServices = async (req, res) => {
 };
 
 export const RemoveServices = async (req, res) => {
-    const { serviceId } = req.body;
+    const { serviceId } = req.params;
     try {
         const service = await Services.findById(serviceId);
         if (!service) {
