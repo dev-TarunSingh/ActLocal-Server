@@ -1,4 +1,5 @@
 import Services from '../models/Services.js';
+import mongoose from 'mongoose';
 
 export const AddService = async (req, res) => {
   const { name, description, category, servicePrice, location, postedBy } = req.body;
@@ -52,9 +53,11 @@ export const RemoveServices = async (req, res) => {
 };
 
 export const MyServices = async (req, res) => {
-    const { user } = req.body;
+    console.log("got request to find my services");
+    const { user } = req.query;
     try {
         const posts = await Services.find({ postedBy : user});
+        console.log(posts);
         res.status(200).json({message: "Found Some Posts", posts: posts})
     }
     catch (error) {

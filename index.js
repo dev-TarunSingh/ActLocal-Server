@@ -99,6 +99,17 @@ io.on("connection", (socket) => {
     
   });
 
+  newSocket.on("newMessage", (message) => {
+    if (message && message.chatroomId) {
+      setMessages((prev) => ({
+        ...prev,
+        [message.chatroomId]: [...(prev[message.chatroomId] || []), message], // Append new messages
+      }));
+    } else {
+      console.error("Invalid message received:", message);
+    }
+  });
+
   // Handle disconnect
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
