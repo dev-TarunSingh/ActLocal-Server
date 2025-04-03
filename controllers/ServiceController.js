@@ -35,22 +35,25 @@ export const NearbyServices = async (req, res) => {
 };
 
 export const RemoveServices = async (req, res) => {
-    const { serviceId } = req.params;
     try {
-        const service = await Services.findById(serviceId);
-        if (!service) {
-            res.status(404).json({ message: 'Service not found' });
-        }
-        else {
-            await Services.deleteOne({ _id: serviceId });
-            res.status(200).json({ message: 'Service removed successfully' });
-        }
-    }
-    catch (error) {
-        res.status(500).json({ message: 'Error removing service: ' + error.message });
-    }
+      const { serviceId } = req.body; // Ensure the client sends the serviceId in the request body
+      console.log("got request to remove service with id", serviceId);
+      if (!serviceId) {
+        return res.status(400).json({ message: "Service ID is required" });
+      }
+  
+      const result = await Services.findByIdAndDelete(serviceId);
 
-};
+      if (!result) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+  
+      res.status(200).json({ message: "Service deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
 
 export const MyServices = async (req, res) => {
     console.log("got request to find my services");
