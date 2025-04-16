@@ -95,7 +95,13 @@ io.on("connection", (socket) => {
     const recipient = chatroom.participants.find((user) => user._id.toString() !== sender);
 
     
-    io.emit("newMessage", message);
+    chatroom.participants.forEach((user) => {
+      const userIdStr = user._id.toString();
+      const socketId = onlineUsers.get(userIdStr);
+      if (socketId && userIdStr !== sender) {
+        io.to(socketId).emit("newMessage", message);
+      }
+    });
     
   });
 
