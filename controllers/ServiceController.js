@@ -27,6 +27,10 @@ export const NearbyServices = async (req, res) => {
                 }
             }
         }).populate("postedBy", "firstName _id");
+        console.log("sent serives to client");
+        if (services.length === 0) {
+            return res.status(404).json({ message: 'No services found nearby' });
+        }
         res.status(200).json({ services });
     }
     catch (error) {
