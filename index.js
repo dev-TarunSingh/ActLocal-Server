@@ -11,6 +11,14 @@ import userRoutes from './routes/userRoutes.js'; // Import the default export
 import chatRoutes from './routes/chatRoutes.js'; // Import the default export
 import ChatRooms from './models/Chat.js';
 import Message from './models/Message.js';
+import { deleteOldPosts } from './controllers/PostController.js'; // Import the function to delete old posts
+
+const cron = require("node-cron");
+const mongoose = require("mongoose");
+const Post = require("./models/Post"); // adjust path as needed
+
+
+
 
 const app = express();
 const server = http.createServer(app);
@@ -27,7 +35,11 @@ app.use(cors());
 app.use(express.json());
 const PORT = process.env.PORT;
 
+
+
 const mongoURI = process.env.MONGO_URI;
+
+
 
 mongoose.connect(mongoURI, {
   serverSelectionTimeoutMS: 30000
@@ -52,6 +64,11 @@ app.post('/services/nearby', NearbyServices);
 app.delete('/services', RemoveServices);
 app.get('/services/my-services', MyServices);
 
+// Schedule to run daily at 3:00 AM
+cron.schedule("0 3 * * *", () => {
+  console.log("Running daily cleanup...");
+  deleteOldPosts();
+});
 
 io.on("join", (userId) => {
   onlineUsers.set(userId, socket.id);
