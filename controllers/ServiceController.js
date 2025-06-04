@@ -86,3 +86,16 @@ export const MyServices = async (req, res) => {
     res.status(500).json({ message: "Error Finding Your Posts!" });
   }
 };
+
+export const deleteOldPosts = async () => {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  try {
+    const result = await Services.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
+    console.log(`Deleted ${result.deletedCount} posts older than 30 days.`);
+    const Msgresult = await Messages.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
+    console.log(`Deleted ${Msgresult.deletedCount} messages older than 30 days.`);
+  } catch (err) {
+    console.error("Error deleting old posts:", err);
+  }
+};

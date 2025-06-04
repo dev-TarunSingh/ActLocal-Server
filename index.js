@@ -6,19 +6,15 @@ import { Server } from "socket.io";
 import cors from 'cors';
 import http from 'http';
 import { signup, login } from './controllers/userController.js';
-import { AddService, NearbyServices, RemoveServices, MyServices } from './controllers/ServiceController.js';
+import { AddService, NearbyServices, RemoveServices, MyServices, deleteOldPosts } from './controllers/ServiceController.js';
 import userRoutes from './routes/userRoutes.js'; // Import the default export
 import chatRoutes from './routes/chatRoutes.js'; // Import the default export
 import ChatRooms from './models/Chat.js';
 import Message from './models/Message.js';
-import { deleteOldPosts } from './controllers/PostController.js'; // Import the function to delete old posts
 
 const cron = require("node-cron");
 const mongoose = require("mongoose");
-const Post = require("./models/Post"); // adjust path as needed
-
-
-
+const Post = require("./models/Post");
 
 const app = express();
 const server = http.createServer(app);
