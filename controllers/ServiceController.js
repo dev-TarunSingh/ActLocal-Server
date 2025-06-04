@@ -1,5 +1,6 @@
 import Services from "../models/Services.js";
 import User from "../models/User.js";
+import Message from "../models/Message.js";
 
 export const AddService = async (req, res) => {
   const { name, description, category, servicePrice, location, postedBy } =
@@ -93,7 +94,7 @@ export const deleteOldPosts = async () => {
   try {
     const result = await Services.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
     console.log(`Deleted ${result.deletedCount} posts older than 30 days.`);
-    const Msgresult = await Messages.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
+    const Msgresult = await Message.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
     console.log(`Deleted ${Msgresult.deletedCount} messages older than 30 days.`);
   } catch (err) {
     console.error("Error deleting old posts:", err);

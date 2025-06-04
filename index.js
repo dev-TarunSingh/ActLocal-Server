@@ -11,10 +11,8 @@ import userRoutes from './routes/userRoutes.js'; // Import the default export
 import chatRoutes from './routes/chatRoutes.js'; // Import the default export
 import ChatRooms from './models/Chat.js';
 import Message from './models/Message.js';
+import cron from 'node-cron';
 
-const cron = require("node-cron");
-const mongoose = require("mongoose");
-const Post = require("./models/Post");
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +22,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   },
 });
+
 
 const onlineUsers = new Map();
 
