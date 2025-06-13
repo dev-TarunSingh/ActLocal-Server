@@ -1,63 +1,64 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
-import express from 'express';
-import mongoose from 'mongoose';
+import express from "express";
+import mongoose from "mongoose";
 import { Server } from "socket.io";
-import cors from 'cors';
-import http from 'http';
-import { signup, login } from './controllers/userController.js';
-import { AddService, NearbyServices, RemoveServices, MyServices, deleteOldPosts } from './controllers/ServiceController.js';
-import userRoutes from './routes/userRoutes.js'; // Import the default export
-import chatRoutes from './routes/chatRoutes.js'; // Import the default export
-import ChatRooms from './models/Chat.js';
-import Message from './models/Message.js';
-import cron from 'node-cron';
-
+import cors from "cors";
+import http from "http";
+import { signup, login } from "./controllers/userController.js";
+import {
+  AddService,
+  NearbyServices,
+  RemoveServices,
+  MyServices,
+  deleteOldPosts,
+} from "./controllers/ServiceController.js";
+import userRoutes from "./routes/userRoutes.js"; // Import the default export
+import chatRoutes from "./routes/chatRoutes.js"; // Import the default export
+import ChatRooms from "./models/Chat.js";
+import Message from "./models/Message.js";
+import cron from "node-cron";
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", 
-    methods: ["GET", "POST"]
+    origin: "*",
+    methods: ["GET", "POST"],
   },
 });
 
-
 const onlineUsers = new Map();
 
-app.use(cors()); 
+app.use(cors());
 app.use(express.json());
 const PORT = process.env.PORT;
 
-
-
 const mongoURI = process.env.MONGO_URI;
 
+mongoose
+  .connect(mongoURI, {
+    serverSelectionTimeoutMS: 30000,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.error("Error connecting to MongoDB:", err.message);
+    console.error("Error details:", err);
+    if (err.name === "MongooseServerSelectionError") {
+      console.error("Ensure your MongoDB URI is correct and accessible.");
+    }
+  });
 
-
-mongoose.connect(mongoURI, {
-  serverSelectionTimeoutMS: 30000
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch((err) => {
-  console.error('Error connecting to MongoDB:', err.message);
-  console.error('Error details:', err);
-  if (err.name === 'MongooseServerSelectionError') {
-    console.error('Ensure your MongoDB URI is correct and accessible.');
-  }
-});
-
-
-
-app.use('/api/user', userRoutes);
-app.use('/api/chat', chatRoutes);
-app.post('/signup', signup);
-app.post('/login', login);
-app.post('/services', AddService);
-app.post('/services/nearby', NearbyServices);
-app.delete('/services', RemoveServices);
-app.get('/services/my-services', MyServices);
+app.use("/api/user", userRoutes);
+app.use("/api/chat", chatRoutes);
+app.post("/signup", signup);
+app.post("/login", login);
+app.post("/services", AddService);
+app.post("/services/nearby", NearbyServices);
+app.delete("/services", RemoveServices);
+app.get("/services/my-services", MyServices);
 
 // Schedule to run daily at 3:00 AM
 cron.schedule("0 3 * * *", () => {
@@ -88,7 +89,10 @@ io.on("connection", (socket) => {
 
       // Send unread messages to the user
       if (messages.length > 0) {
-        io.to(socket.id).emit("missedMessages", { chatroomId: chatroom._id, messages });
+        io.to(socket.id).emit("missedMessages", {
+          chatroomId: chatroom._id,
+          messages,
+        });
       }
     }
   });
@@ -103,10 +107,13 @@ io.on("connection", (socket) => {
     await ChatRooms.findByIdAndUpdate(chatroomId, { lastMessage: message._id });
 
     // Notify other participant
-    const chatroom = await ChatRooms.findById(chatroomId).populate("participants");
-    const recipient = chatroom.participants.find((user) => user._id.toString() !== sender);
+    const chatroom = await ChatRooms.findById(chatroomId).populate(
+      "participants"
+    );
+    const recipient = chatroom.participants.find(
+      (user) => user._id.toString() !== sender
+    );
 
-    
     chatroom.participants.forEach((user) => {
       const userIdStr = user._id.toString();
       const socketId = onlineUsers.get(userIdStr);
@@ -114,7 +121,6 @@ io.on("connection", (socket) => {
         io.to(socketId).emit("newMessage", message);
       }
     });
-    
   });
 
   // Handle disconnect
