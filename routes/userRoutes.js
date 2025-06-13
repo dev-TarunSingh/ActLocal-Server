@@ -2,7 +2,7 @@ import express from "express";
 import User from "../models/User.js";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import bcrypt from "bcrypt";
+import bcryptjs from "bcryptjs";
 const router = express.Router();
 
 router.post("/forgot-credentials", async (req, res) => {
@@ -52,7 +52,7 @@ router.post("/reset-password", async (req, res) => {
   console.log("Stupid On his way to set new password.");
   console.log(token)
   try {
-    console.log("Looking for that Stupid!")
+    console.log("Looking for that Stupid!");
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() }, // token not expired
