@@ -114,4 +114,37 @@ router.get("/check-username/:username", async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  console.log("Updating user profile for ID:", req.params.id);
+  try {
+    const updatedData = req.body;
+
+    // Validate phone length if sent
+    if (updatedData.phone && updatedData.phone.length !== 10) {
+      return res.status(400).json({ error: 'Phone number must be 10 digits.' });
+    }
+
+    console.log("Updating");
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updatedData },
+      { new: true }
+    );
+
+    console.log("Updated user:", updatedUser);
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Profile updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router; // Use ES module export
+
+
