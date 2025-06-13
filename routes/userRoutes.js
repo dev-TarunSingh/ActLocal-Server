@@ -2,7 +2,7 @@ import express from "express";
 import User from "../models/User.js";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import bcryptjs from "bcryptjs";
+import bcrypt from "bcryptjs";
 const router = express.Router();
 
 router.post("/forgot-credentials", async (req, res) => {
@@ -49,38 +49,47 @@ router.post("/forgot-credentials", async (req, res) => {
 
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
-  console.log("Stupid On his way to set new password.");
-  console.log(token)
+
+  console.log("Reset Password request received.");
+  console.log("Token:", token);
+
+  if (!token || typeof token !== "string") {
+    return res.status(400).json({ message: "Invalid or missing token." });
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters." });
+  }
+
   try {
-    console.log("Looking for that Stupid!");
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }, // token not expired
+      resetPasswordExpires: { $gt: Date.now() }, // Ensure token is still valid
     });
-
-    console.log("found stupid's details!");
 
     if (!user) {
       return res.status(400).json({ message: "Invalid or expired token." });
     }
-    // Hash new password
+
+    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    console.log("That Guy got a new password!");
 
-    // Remove reset token and expiry
+    // Clear reset token and expiry
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
-    console.log("Tokens Erased!");
+
+    const username = user.userName;
 
     await user.save();
-    console.log("Helped Stupid!");
+    console.log("Password reset successful for user:", user.email);
 
-    res
-      .status(200)
-      .json({ message: "Password reset successful. You can now log in." });
+    res.status(200).json({ message: "Password reset successful. You can now log in with Your username.", username });
   } catch (err) {
-    res.status(500).json({ message: "Server error." });
+    console.error("Reset Password Error:", err);
+    res.status(500).json({ message: "Server error. Please try again later." });
   }
 });
 
