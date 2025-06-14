@@ -13,7 +13,8 @@ router.get("/:userId", async (req, res) => {
     console.log(`Fetching chatrooms for user: ${userId}`);
 
     const foundchatrooms = await ChatRooms.find({ participants: userId })
-      .populate("participants", "firstName")
+      .populate("participants", "firstName profilePicture")
+
       .sort({ updatedAt: -1 });
 
     const chatroomsWithLastMessage = await Promise.all(
@@ -79,9 +80,8 @@ router.post("/chatrooms", async (req, res) => {
 
   try {
     const chatroom = await ChatRooms.findOne({
-      participants: { $all: [user1Id, user2Id], $size: 2 }
+      participants: { $all: [user1Id, user2Id], $size: 2 },
     });
-    
 
     console.log("Chatroom found:", chatroom);
 
