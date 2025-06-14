@@ -18,6 +18,8 @@ import chatRoutes from "./routes/chatRoutes.js"; // Import the default export
 import ChatRooms from "./models/Chat.js";
 import Message from "./models/Message.js";
 import cron from "node-cron";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +34,7 @@ const onlineUsers = new Map();
 
 app.use(cors());
 app.use(express.json());
+
 const PORT = process.env.PORT;
 
 const mongoURI = process.env.MONGO_URI;
@@ -51,14 +54,24 @@ mongoose
     }
   });
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/avatars", express.static(path.join(__dirname, "public/avatars")));
+
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.post("/signup", signup);
+
 app.post("/login", login);
 app.post("/services", AddService);
 app.post("/services/nearby", NearbyServices);
 app.delete("/services", RemoveServices);
 app.get("/services/my-services", MyServices);
+
+app.get("/", (req, res) => {
+  // redirect to another site
+  res.redirect("https://actlocal.live");
+});
 
 // Schedule to run daily at 3:00 AM
 cron.schedule("0 3 * * *", () => {

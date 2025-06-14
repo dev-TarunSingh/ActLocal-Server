@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String },
   postCount: { type: Number, default: 0},
   address: { type: String },
-  profilePicture: { type: String },
+  profilePicture: { type: String, default: "https://actlocal-server.onrender.com/avatars/1.svg" },
   bio: { type: String },
   reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
   rating: { type: Number, default: 0 },
