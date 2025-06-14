@@ -57,7 +57,6 @@ mongoose
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/avatars", express.static(path.join(__dirname, "public/avatars")));
-app.use("/download", express.static(path.join(__dirname, "public/apk")));
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.post("/signup", signup);
