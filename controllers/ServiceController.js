@@ -40,7 +40,7 @@ export const NearbyServices = async (req, res) => {
           $maxDistance: 20000,
         },
       },
-    }).populate("postedBy", "firstName _id", "profilePicture");
+    }).populate("postedBy", "firstName _id profilePicture");
     console.log("sent serives to client", services);
     if (services.length === 0) {
       return res.status(404).json({ message: "No services found nearby" });
