@@ -72,7 +72,7 @@ app.get("/", (req, res) => {
 });
 
 // Schedule to run daily at 3:00 AM
-cron.schedule("0 3 * * *", () => {
+cron.schedule("0 0 * * *", () => {
   console.log("Running daily cleanup...");
   deleteOldPosts();
 });
