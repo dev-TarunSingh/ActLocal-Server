@@ -1,26 +1,40 @@
-import { Expo } from "expo-server-sdk";
+import fetch from "node-fetch";
 
-// Create a new Expo SDK client
-const expo = new Expo();
-
-export const sendPushNotification = async (pushToken, message) => {
-  if (!Expo.isExpoPushToken(pushToken)) {
-    console.error("Invalid Expo push token:", pushToken);
+export async function sendPushNotification(
+  expoPushToken,
+  { text, chatroomId }
+) {
+  if (!expoPushToken || !expoPushToken.startsWith("ExponentPushToken")) {
+    console.warn("Invalid Expo Push Token:", expoPushToken);
     return;
   }
 
-  const notification = {
-    to: pushToken,
+  const message = {
+    to: expoPushToken,
     sound: "default",
     title: "New Message",
-    body: message.text || "You have a new message",
-    data: { chatroomId: message.chatroomId },
+    body: text,
+    data: { chatroomId },
   };
 
   try {
-    const tickets = await expo.sendPushNotificationsAsync([notification]);
-    console.log("Push notification sent:", tickets);
+    const res = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Accept-encoding": "gzip, deflate",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(message),
+    });
+
+    const result = await res.json();
+    console.log("Push notification result:", result);
+
+    if (result?.data?.status === "error") {
+      console.error("Expo push error:", result.data.message);
+    }
   } catch (error) {
-    console.error("Error sending push notification:", error);
+    console.error("Push notification error:", error);
   }
-};
+}

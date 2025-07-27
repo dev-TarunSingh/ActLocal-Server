@@ -19,6 +19,7 @@ import ChatRooms from "./models/Chat.js";
 import Message from "./models/Message.js";
 import cron from "node-cron";
 import path from "path";
+import User from "./models/User.js";
 import { fileURLToPath } from "url";
 
 const app = express();
@@ -77,10 +78,6 @@ cron.schedule("0 0 * * *", () => {
   deleteOldPosts();
 });
 
-io.on("join", (userId) => {
-  onlineUsers.set(userId, socket.id);
-});
-
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
@@ -124,12 +121,19 @@ io.on("connection", (socket) => {
 
     for (const user of chatroom.participants) {
       const userIdStr = user._id.toString();
+
+      // Skip sender
+      if (userIdStr === sender) continue;
+
       const socketId = onlineUsers.get(userIdStr);
-      if (socketId && userIdStr !== sender) {
-        // Online → send via socket
+
+      if (socketId) {
+        // ✅ Online user
+        console.log("✅ Sending message to online user:", userIdStr);
         io.to(socketId).emit("newMessage", message);
-      } else if (userIdStr !== sender) {
-        // Offline → send push notification
+      } else {
+        // 📴 Offline user → send push notification
+        console.log("📴 Sending push notification to offline user:", userIdStr);
         const userDoc = await User.findById(userIdStr);
         if (userDoc?.expoPushToken) {
           const { sendPushNotification } = await import(
