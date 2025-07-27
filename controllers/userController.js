@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+
+
 export const signup = async (req, res) => {
   const { email, password, firstName, userName } = req.body;
   console.log(email, password, firstName);

@@ -111,13 +111,10 @@ io.on("connection", (socket) => {
   // When a user sends a message
   socket.on("sendMessage", async ({ chatroomId, sender, text }) => {
     const message = new Message({ chatroomId, sender, text });
-
     await message.save();
 
-    // Update last message in chatroom
     await ChatRooms.findByIdAndUpdate(chatroomId, { lastMessage: message._id });
 
-    // Notify other participant
     const chatroom = await ChatRooms.findById(chatroomId).populate(
       "participants"
     );
@@ -125,13 +122,26 @@ io.on("connection", (socket) => {
       (user) => user._id.toString() !== sender
     );
 
-    chatroom.participants.forEach((user) => {
+    for (const user of chatroom.participants) {
       const userIdStr = user._id.toString();
       const socketId = onlineUsers.get(userIdStr);
       if (socketId && userIdStr !== sender) {
+        // Online → send via socket
         io.to(socketId).emit("newMessage", message);
+      } else if (userIdStr !== sender) {
+        // Offline → send push notification
+        const userDoc = await User.findById(userIdStr);
+        if (userDoc?.expoPushToken) {
+          const { sendPushNotification } = await import(
+            "./utils/sendPushNotification.js"
+          );
+          await sendPushNotification(userDoc.expoPushToken, {
+            text,
+            chatroomId,
+          });
+        }
       }
-    });
+    }
   });
 
   // Handle disconnect
